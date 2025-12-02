@@ -1,4 +1,4 @@
-// models/index.js - Versão FINAL AJUSTADA AOS NOMES DE ARQUIVO
+// models/index.js - Versão CORRIGIDA (Case Sensitive)
 
 // ====================================================
 // 1. IMPORTAÇÃO DO BANCO DE DADOS
@@ -8,15 +8,15 @@ const { sequelize, testConnection } = require('../config/database');
 // ====================================================
 // 2. IMPORTAÇÃO DOS MODELOS
 // ====================================================
-// ATENÇÃO: As importações abaixo estão ajustadas exatamente para os nomes
-// dos arquivos presentes no seu repositório.
+// CORREÇÃO: Os nomes aqui devem ser idênticos aos nomes dos arquivos físicos
+// Linux diferencia 'User' de 'user'.
 
-const User = require('./user');         // Arquivo está como User.js (Maiúsculo)
-const Game = require('./game');         // Arquivo está como Game.js (Maiúsculo)
-const UserGame = require('./userGame'); // Arquivo está como UserGame.js (Maiúsculo)
+const User = require('./User');         // Corrigido de './user' para './User'
+const Game = require('./Game');         // Corrigido de './game' para './Game'
+const UserGame = require('./UserGame'); // Corrigido de './userGame' para './UserGame'
 
-const Profile = require('./profile');   // Arquivo está como profile.js (minúsculo)
-const Review = require('./review');     // Arquivo está como review.js (minúsculo)
+const Profile = require('./profile');   // Mantido minúsculo (arquivo é profile.js)
+const Review = require('./review');     // Mantido minúsculo (arquivo é review.js)
 
 
 // ====================================================
