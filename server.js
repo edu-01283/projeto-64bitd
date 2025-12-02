@@ -526,7 +526,15 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
     try {
         const jogoDB = await Game.findOne({
             where: { slug: slug },
-            include: [{ model: Review, as: 'Avaliacoes', include: [{ model: User }] }], 
+            // CORREÇÃO: Adicionado "as: 'Usuario'" no include aninhado
+            include: [{ 
+                model: Review, 
+                as: 'Avaliacoes', 
+                include: [{ 
+                    model: User,
+                    as: 'Usuario' // <--- OBRIGATÓRIO pois foi definido no models/index.js
+                }] 
+            }], 
             order: [[{ model: Review, as: 'Avaliacoes' }, 'createdAt', 'DESC']]
         });
 
