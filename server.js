@@ -1,4 +1,4 @@
-// server.js - Versão FINAL (Com Criptografia BCrypt, Upload de Foto e Correção de Login)
+// server.js - Versão FINAL (Corrigida e Limpa)
 
 require('dotenv').config(); 
 
@@ -526,13 +526,12 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
     try {
         const jogoDB = await Game.findOne({
             where: { slug: slug },
-            // CORREÇÃO: Adicionado "as: 'Usuario'" no include aninhado
             include: [{ 
                 model: Review, 
                 as: 'Avaliacoes', 
                 include: [{ 
                     model: User,
-                    as: 'Usuario' // <--- OBRIGATÓRIO pois foi definido no models/index.js
+                    as: 'Usuario'
                 }] 
             }], 
             order: [[{ model: Review, as: 'Avaliacoes' }, 'createdAt', 'DESC']]
@@ -682,7 +681,6 @@ app.post('/reviews/editar/:id', requireLogin, async (req, res) => {
 });
 
 // Criar Review (GET)
-a// Criar Review (GET)
 app.get('/reviews/criar', requireLogin, async (req, res) => {
     try {
         const jogos = await Game.findAll({ attributes: ['ID', 'Nome'], order: [['Nome', 'ASC']] });
@@ -692,7 +690,6 @@ app.get('/reviews/criar', requireLogin, async (req, res) => {
             user: req.session.user, 
             jogos: jogos, 
             selectedId: selectedId,
-            // CORREÇÃO: Passando as variáveis para evitar erro "undefined" no EJS
             erro: req.query.erro || null,
             sucesso: req.query.sucesso || null
         });
