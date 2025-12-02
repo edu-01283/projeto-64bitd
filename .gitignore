@@ -1,5 +1,9 @@
+# Arquivos de Dependências
+/node_modules
+# Variáveis de Ambiente e Arquivos de Log
+.env
+npm-debug.log*
+yarn-debug.log*
+*.log
 # Arquivos de upload locais (Multer)
 /public/img/uploads
-
-# Variáveis de Ambiente
-.env
