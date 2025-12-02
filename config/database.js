@@ -1,35 +1,69 @@
-// config/database.js
+// config/database.js - PRONTO PARA PRODUÇÃO (Render/PostgreSQL) E LOCAL (MySQL)
 
 const { Sequelize } = require('sequelize');
 
-// Configuração da Conexão com MySQL
-// Lendo as variáveis de ambiente do arquivo .env
-const sequelize = new Sequelize( // <-- Linha 7
-    process.env.DB_NAME,      // Nome do DB
-    process.env.DB_USER,      // Usuário do DB (lido de DB_USER no .env)
-    process.env.DB_PASSWORD,  // Senha do DB (lido de DB_PASSWORD no .env)
-    {
-        host: process.env.DB_HOST,
-        dialect: process.env.DB_DIALECT, // Deve ser 'mysql'
-        logging: false, // Defina como true para ver as queries SQL no console
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
+// Variáveis de Ambiente
+const DATABASE_URL = process.env.DATABASE_URL; // Variável fornecida pelo Render (Produção)
+const DB_DIALECT_LOCAL = process.env.DB_DIALECT || 'mysql'; // Dialeto local (Desenvolvimento)
+
+let sequelize;
+
+if (DATABASE_URL) {
+    // ====================================================
+    // AMBIENTE DE PRODUÇÃO (Render/PostgreSQL)
+    // Se a DATABASE_URL existir, usamos o PostgreSQL com SSL
+    // ====================================================
+    console.log('Detectando ambiente de produção. Usando PostgreSQL.');
+    
+    // Configuração obrigatória para PostgreSQL na nuvem (SSL)
+    const connectionOptions = {
+        dialect: 'postgres',
+        protocol: 'postgres',
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false // Essencial para conexões SSL do Render
+            }
+        },
+        logging: false, // Desativa logs em produção
+    };
+    
+    // Conecta usando a string de URL completa
+    sequelize = new Sequelize(DATABASE_URL, connectionOptions);
+
+} else {
+    // ====================================================
+    // AMBIENTE LOCAL (MySQL/Desenvolvimento)
+    // Usa as variáveis padrão do .env (DB_HOST, DB_NAME, etc.)
+    // ====================================================
+    console.log('Detectando ambiente local. Usando MySQL.');
+
+    sequelize = new Sequelize( 
+        process.env.DB_NAME,      // Nome do DB
+        process.env.DB_USER,      // Usuário do DB
+        process.env.DB_PASSWORD,  // Senha do DB
+        {
+            host: process.env.DB_HOST,
+            dialect: DB_DIALECT_LOCAL, // 'mysql'
+            logging: false, 
+            pool: {
+                max: 5,
+                min: 0,
+                acquire: 30000,
+                idle: 10000
+            }
         }
-    }
-);
+    );
+}
 
 // Função de Teste de Conexão
 async function testConnection() {
     try {
         await sequelize.authenticate();
-        console.log('✅ Conexão com o banco de dados estabelecida com sucesso.');
+        console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
     } catch (error) {
-        console.error('❌ Não foi possível conectar ao banco de dados:', error.message);
-        // Em caso de falha de conexão, lançamos o erro para parar o processo de inicialização.
-        throw error; 
+        console.error('❌ ERRO ao conectar ao banco de dados:', error.message);
+        throw error;
     }
 }
 
