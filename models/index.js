@@ -3,18 +3,18 @@
 // ====================================================
 // 1. IMPORTAÇÃO DO BANCO DE DADOS
 // ====================================================
-// Importa a instância do Sequelize (sequelize) e a função de teste de conexão do arquivo de configuração.
+// Importa a instância do Sequelize (sequelize) e a função de teste de conexão.
 const { sequelize, testConnection } = require('../config/database'); 
 
 // ====================================================
 // 2. IMPORTAÇÃO DOS MODELOS (CORREÇÃO DE CASE SENSITIVE 🛠️)
 // ====================================================
-// CRÍTICO PARA O RENDER: Nomes de arquivo devem ser importados com a primeira letra maiúscula para corresponder ao nome do arquivo (User.js, Profile.js).
-const User = require('./User');       // CORRIGIDO: Maiúsculas para ambientes Linux/Render
-const Profile = require('./Profile');   // CORRIGIDO: Maiúsculas
-const Game = require('./Game');         // CORRIGIDO: Maiúsculas
-const UserGame = require('./UserGame'); // CORRIGIDO: Maiúsculas
-const Review = require('./Review');     // CORRIGIDO: Maiúsculas
+// CRÍTICO PARA O RENDER: As importações DEVEM ser em lowercase para corresponder aos nomes que o GitHub está rastreando.
+const User = require('./user');       
+const Profile = require('./profile');   
+const Game = require('./game');         
+const UserGame = require('./userGame'); 
+const Review = require('./review');     
 
 // ====================================================
 // 3. DEFINE AS ASSOCIAÇÕES (RELACIONAMENTOS)
@@ -23,9 +23,9 @@ const Review = require('./Review');     // CORRIGIDO: Maiúsculas
 // --- Relação 1:1: Usuário <--> Perfil ---
 // Um Usuário tem UM Perfil.
 User.hasOne(Profile, { 
-    foreignKey: 'UsuarioID', 
-    as: 'Perfil', 
-    onDelete: 'CASCADE' // Regra: Se o Usuário for deletado, o Perfil também é.
+    foreignKey: 'UsuarioID', 
+    as: 'Perfil', 
+    onDelete: 'CASCADE' 
 });
 // Um Perfil pertence a UM Usuário.
 Profile.belongsTo(User, { foreignKey: 'UsuarioID' });
@@ -34,15 +34,15 @@ Profile.belongsTo(User, { foreignKey: 'UsuarioID' });
 // --- Relação N:M: Usuário <--> Jogo (Biblioteca/Favoritos) ---
 // Um Usuário tem MUITOS Jogos (através da tabela UserGame).
 User.belongsToMany(Game, { 
-    through: UserGame,         // Tabela pivot (junção)
-    foreignKey: 'fk_Usuarios_ID', // Chave do Usuário na tabela UserGame
-    as: 'JogosFavoritos'       // Alias para quando buscar os jogos do Usuário
+    through: UserGame,         
+    foreignKey: 'fk_Usuarios_ID', 
+    as: 'JogosFavoritos'       
 });
 // Um Jogo pertence a MUITOS Usuários (através da tabela UserGame).
 Game.belongsToMany(User, { 
-    through: UserGame,         // Tabela pivot (junção)
-    foreignKey: 'fk_Jogos_ID',    // Chave do Jogo na tabela UserGame
-    as: 'UsuariosComJogo'      // Alias para quando buscar os usuários que têm o jogo
+    through: UserGame,         
+    foreignKey: 'fk_Jogos_ID',    
+    as: 'UsuariosComJogo'      
 });
 
 
@@ -66,11 +66,11 @@ Review.belongsTo(Game, { foreignKey: 'JogoID', as: 'Jogo' });
 // ====================================================
 // Exporta todos os componentes para que sejam importados em um único 'require' no server.js.
 module.exports = {
-    sequelize,
-    testConnection,
-    User,
-    Profile,
-    Game,
-    UserGame,
-    Review 
+    sequelize,
+    testConnection,
+    User,
+    Profile,
+    Game,
+    UserGame,
+    Review 
 };
