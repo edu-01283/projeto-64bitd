@@ -3,19 +3,18 @@
 // ====================================================
 // 1. IMPORTAÇÃO DO BANCO DE DADOS
 // ====================================================
-// Importa a instância do Sequelize (sequelize) e a função de teste de conexão.
+// Importa a instância do Sequelize (sequelize) e a função de teste de conexão do arquivo de configuração.
 const { sequelize, testConnection } = require('../config/database'); 
 
 // ====================================================
-// 2. IMPORTAÇÃO DOS MODELOS
-// (Garantindo Lowercase para compatibilidade com Linux/Render)
+// 2. IMPORTAÇÃO DOS MODELOS (CORREÇÃO DE CASE SENSITIVE 🛠️)
 // ====================================================
-// Importa cada modelo definido separadamente.
-const User = require('./user');       // Modelo de Usuário
-const Profile = require('./profile');   // Modelo de Perfil (Informações adicionais do Usuário)
-const Game = require('./game');         // Modelo de Jogo
-const UserGame = require('./userGame'); // Modelo da tabela pivot (N:M) entre Usuário e Jogo
-const Review = require('./review');     // Modelo de Avaliação/Review
+// CRÍTICO PARA O RENDER: Nomes de arquivo devem ser importados com a primeira letra maiúscula para corresponder ao nome do arquivo (User.js, Profile.js).
+const User = require('./User');       // Corrigido de './user' para './User'
+const Profile = require('./Profile');   // Corrigido de './profile' para './Profile'
+const Game = require('./Game');         // Corrigido de './game' para './Game'
+const UserGame = require('./UserGame'); // Corrigido de './userGame' para './UserGame'
+const Review = require('./Review');     // Corrigido de './review' para './Review'
 
 // ====================================================
 // 3. DEFINE AS ASSOCIAÇÕES (RELACIONAMENTOS)
@@ -26,9 +25,9 @@ const Review = require('./review');     // Modelo de Avaliação/Review
 User.hasOne(Profile, { 
     foreignKey: 'UsuarioID', 
     as: 'Perfil', 
-    onDelete: 'CASCADE' // Se o Usuário for deletado, o Perfil também é.
+    onDelete: 'CASCADE' // Regra: Se o Usuário for deletado, o Perfil também é.
 });
-// Um Perfil pertence a UM Usuário (usando a mesma chave estrangeira).
+// Um Perfil pertence a UM Usuário.
 Profile.belongsTo(User, { foreignKey: 'UsuarioID' });
 
 
@@ -65,8 +64,7 @@ Review.belongsTo(Game, { foreignKey: 'JogoID', as: 'Jogo' });
 // ====================================================
 // 4. EXPORTAÇÃO CENTRALIZADA
 // ====================================================
-// Exporta a instância do Sequelize, a função de conexão e todos os modelos.
-// Isso permite que sejam importados em um único 'require' no server.js.
+// Exporta todos os componentes para que sejam importados em um único 'require' no server.js.
 module.exports = {
     sequelize,
     testConnection,
