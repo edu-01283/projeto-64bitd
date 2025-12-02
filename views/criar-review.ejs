@@ -1,72 +1,72 @@
-<%- include('partials/_header.ejs', { pageTitle: 'Criar Review', user: user }) %>
+<%- include('_header') %>
 
-    <style>
-        /* Estilos específicos do sistema de estrelas */
-        .star-rating { 
-            display: flex; 
-            flex-direction: row-reverse; 
-            justify-content: flex-start; 
-            gap: 10px; 
-        }
-        .star-rating input { display: none; }
-        .star-rating label { 
-            font-size: 2rem; 
-            color: #555; /* Cor cinza padrão */
-            cursor: pointer; 
-            transition: color 0.2s; 
-        }
-        /* Estilo para estrelas selecionadas e as anteriores */
-        .star-rating input:checked ~ label { color: #ffc107; } 
-        /* Estilo para hover (as estrelas ficam amarelas ao passar o mouse) */
-        .star-rating label:hover, 
-        .star-rating label:hover ~ label { color: #ffc107; }
-    </style>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary shadow">
+                <div class="card-header border-secondary">
+                    <h3 class="text-white m-0"><i class="fas fa-pen-alt me-2 text-primary"></i>Escrever Avaliação</h3>
+                </div>
+                <div class="card-body">
 
-    <h2 class="text-white mb-4">Publicar Novo Review</h2>
+                    <% if (typeof erro !== 'undefined' && erro) { %>
+                        <div class="alert alert-danger">
+                            Ocorreu um erro ao salvar sua avaliação. Tente novamente.
+                        </div>
+                    <% } %>
 
-    <div class="card bg-dark border-secondary p-4">
-        
-        <% if (erro) { %>
-            <div class="alert alert-danger text-center p-2 mb-3">
-                Erro ao salvar o review. Verifique os dados.
-            </div>
-        <% } %>
+                    <form action="/reviews/criar" method="POST">
+                        
+                        <div class="mb-4">
+                            <label for="jogoId" class="form-label text-white fw-bold">Selecione o Jogo</label>
+                            <select class="form-select bg-dark text-white border-secondary" name="jogoId" id="jogoId" required>
+                                <option value="" disabled <%= !selectedId ? 'selected' : '' %>>Escolha um jogo da lista...</option>
+                                <% jogos.forEach(jogo => { %>
+                                    <option value="<%= jogo.ID %>" <%= (selectedId && selectedId == jogo.ID) ? 'selected' : '' %>>
+                                        <%= jogo.Nome %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                            <% if (selectedId) { %>
+                                <div class="form-text text-primary">
+                                    <i class="fas fa-check-circle me-1"></i> Jogo pré-selecionado automaticamente.
+                                </div>
+                            <% } %>
+                        </div>
 
-        <form action="/reviews/criar" method="POST">
-            
-            <div class="mb-3">
-                <label for="jogoId" class="form-label text-light-gray small mb-1">Selecione o Jogo</label>
-                <select name="jogoId" id="jogoId" class="form-select form-control-dark" required>
-                    <option value="">-- Selecione um Jogo --</option>
-                    <% jogos.forEach(jogo => { %>
-                        <option value="<%= jogo.ID %>" <%= jogo.ID == selectedId ? 'selected' : '' %>>
-                            <%= jogo.Nome %>
-                        </option>
-                    <% }); %>
-                </select>
-            </div>
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">Sua Nota</label>
+                            <div class="rating-input d-flex flex-row-reverse justify-content-end gap-2">
+                                <input type="radio" name="nota" id="star5" value="5" class="d-none" required><label for="star5" class="fs-2 text-secondary cursor-pointer"><i class="fas fa-star"></i></label>
+                                <input type="radio" name="nota" id="star4" value="4" class="d-none"><label for="star4" class="fs-2 text-secondary cursor-pointer"><i class="fas fa-star"></i></label>
+                                <input type="radio" name="nota" id="star3" value="3" class="d-none"><label for="star3" class="fs-2 text-secondary cursor-pointer"><i class="fas fa-star"></i></label>
+                                <input type="radio" name="nota" id="star2" value="2" class="d-none"><label for="star2" class="fs-2 text-secondary cursor-pointer"><i class="fas fa-star"></i></label>
+                                <input type="radio" name="nota" id="star1" value="1" class="d-none"><label for="star1" class="fs-2 text-secondary cursor-pointer"><i class="fas fa-star"></i></label>
+                            </div>
+                            <style>
+                                /* CSS Simples para Hover das Estrelas */
+                                .rating-input input:checked ~ label,
+                                .rating-input label:hover,
+                                .rating-input label:hover ~ label { color: #ffc107 !important; }
+                            </style>
+                        </div>
 
-            <div class="mb-4">
-                <label class="form-label text-light-gray small mb-2 d-block">Sua Nota</label>
-                <div class="star-rating">
-                    <input type="radio" name="nota" id="star5" value="5" required><label for="star5"><i class="fas fa-star"></i></label>
-                    <input type="radio" name="nota" id="star4" value="4"><label for="star4"><i class="fas fa-star"></i></label>
-                    <input type="radio" name="nota" id="star3" value="3"><label for="star3"><i class="fas fa-star"></i></label>
-                    <input type="radio" name="nota" id="star2" value="2"><label for="star2"><i class="fas fa-star"></i></label>
-                    <input type="radio" name="nota" id="star1" value="1"><label for="star1"><i class="fas fa-star"></i></label>
+                        <div class="mb-4">
+                            <label for="comentario" class="form-label text-white fw-bold">Sua Opinião</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="comentario" name="comentario" rows="5" placeholder="O que você achou da história, jogabilidade e gráficos?" required></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/reviews" class="text-secondary text-decoration-none">Cancelar</a>
+                            <button type="submit" class="btn btn-primary fw-bold px-4">
+                                <i class="fas fa-paper-plane me-2"></i> Publicar Review
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <div class="mb-4">
-                <label for="comentario" class="form-label text-light-gray small mb-1">Análise Detalhada</label>
-                <textarea name="comentario" id="comentario" class="form-control form-control-dark" rows="6" maxlength="2000" required></textarea>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="/reviews" class="btn btn-outline-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-primary fw-bold px-4">Publicar Review</button>
-            </div>
-        </form>
+        </div>
     </div>
+</div>
 
-<%- include('partials/_footer.ejs') %>
+<%- include('_footer') %>

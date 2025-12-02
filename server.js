@@ -682,12 +682,24 @@ app.post('/reviews/editar/:id', requireLogin, async (req, res) => {
 });
 
 // Criar Review (GET)
+a// Criar Review (GET)
 app.get('/reviews/criar', requireLogin, async (req, res) => {
     try {
         const jogos = await Game.findAll({ attributes: ['ID', 'Nome'], order: [['Nome', 'ASC']] });
         const selectedId = req.query.jogoId || null;
-        res.render('criar-review', { user: req.session.user, jogos: jogos, selectedId: selectedId });
-    } catch (error) { res.redirect('/reviews'); }
+        
+        res.render('criar-review', { 
+            user: req.session.user, 
+            jogos: jogos, 
+            selectedId: selectedId,
+            // CORREÇÃO: Passando as variáveis para evitar erro "undefined" no EJS
+            erro: req.query.erro || null,
+            sucesso: req.query.sucesso || null
+        });
+    } catch (error) { 
+        console.error("Erro ao carregar formulário de review:", error);
+        res.redirect('/reviews'); 
+    }
 });
 
 // Criar Review (POST)
