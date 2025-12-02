@@ -9,7 +9,7 @@ const multer = require('multer');
 const { Op } = require('sequelize'); 
 const bcrypt = require('bcrypt'); // Importa o bcrypt para criptografia
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // ====================================================
 // 1. IMPORTAÇÃO CENTRALIZADA DE MODELOS E DB 
