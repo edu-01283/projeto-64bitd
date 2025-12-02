@@ -1,0 +1,73 @@
+<%- include('_header') %> 
+
+<div id="heroCarousel" class="carousel slide dashboard-carousel mb-5" data-bs-ride="carousel">
+    
+    <div class="carousel-inner">
+        <% destaques.forEach((jogo, index) => { %>
+            <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+                
+                <div class="carousel-bg" style="background-image: url('<%= jogo.img %>');"></div>
+                
+                <div class="carousel-caption-custom">
+                    <div style="max-width: 600px;"> 
+                        <span class="badge bg-primary mb-3 px-3 py-2 text-uppercase" style="letter-spacing: 1px;">Em Destaque</span>
+                        
+                        <h1 class="carousel-title"><%= jogo.titulo %></h1>
+                        
+                        <p class="text-light fs-5 mb-4" style="text-shadow: 0 2px 4px rgba(0,0,0,0.8); opacity: 0.9;">
+                            <%= jogo.genero %>
+                        </p>
+                        
+                        <a href="<%= jogo.rota %>" class="btn btn-light btn-lg fw-bold px-5 rounded-pill shadow-lg">
+                            <i class="fas fa-play me-2 text-primary"></i> Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        <% }); %>
+    </div>
+    
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" style="z-index: 20;">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" style="z-index: 20;">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    </button>
+</div>
+
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="text-white fw-bold m-0 border-start border-4 border-primary ps-3">Aclamados pela Crítica</h4>
+    </div>
+    <div class="scroll-container">
+        <% populares.forEach(jogo => { %>
+            <a href="<%= jogo.rota %>" class="text-decoration-none">
+                <div class="scroll-item">
+                    <img src="<%= jogo.img %>" alt="<%= jogo.titulo %>">
+                    <h6 class="text-white mt-2 mb-0 text-truncate"><%= jogo.titulo %></h6>
+                    <div class="text-warning small mt-1"><i class="fas fa-star"></i> <%= jogo.nota %></div>
+                </div>
+            </a>
+        <% }); %>
+    </div>
+</div>
+
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="text-white fw-bold m-0 border-start border-4 border-warning ps-3">Chegando em Breve</h4>
+    </div>
+    <div class="scroll-container">
+        <% novos.forEach(jogo => { %>
+            <a href="<%= jogo.rota %>" class="text-decoration-none">
+                <div class="scroll-item">
+                    <img src="<%= jogo.img %>" alt="<%= jogo.titulo %>">
+                    <h6 class="text-white mt-2 mb-0 text-truncate"><%= jogo.titulo %></h6>
+                    <span class="badge bg-secondary small mt-1"><%= jogo.nota %></span>
+                </div>
+            </a>
+        <% }); %>
+    </div>
+</div>
+
+<%- include('_footer') %>

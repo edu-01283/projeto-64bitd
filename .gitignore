@@ -1,0 +1,5 @@
+# Arquivos de upload locais (Multer)
+/public/img/uploads
+
+# Variáveis de Ambiente
+.env

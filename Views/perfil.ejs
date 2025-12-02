@@ -1,0 +1,112 @@
+<%- include('_header') %> 
+
+<style>
+    .profile-header {
+        background-image: url('/img/default-banner.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 250px;
+    }
+    .profile-avatar-large {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    .edit-btn {
+        background-color: #343a40;
+        color: #fff;
+        padding: 8px 15px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+    .edit-btn:hover {
+        background-color: #495057;
+    }
+    .game-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px;
+        padding-top: 20px;
+    }
+    .game-item {
+        text-align: center;
+        overflow: hidden;
+    }
+    .game-item img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 5px;
+    }
+</style>
+<div class="profile-header"></div>
+
+<div class="container" style="max-width: 1200px;">
+    
+    <div class="row">
+        <div class="col-md-3 text-center">
+            <img src="<%= user.avatarUrl || user.avatar || '/img/user-avatar.jpg' %>" 
+                alt="Avatar do Usuário" 
+                class="profile-avatar-large mt-n5 border border-5 border-darker-bg">
+        </div>
+            
+        <div class="col-md-9 pt-4">
+            <h2 class="profile-name text-white fw-bold mb-0"><%= user.nome %></h2>
+            <p class="text-secondary mb-3 small">@<%= user.usuario %></p>
+            
+            <p class="profile-bio text-light mb-4">
+                <%= user.bio || 'Adicione uma descrição ao seu perfil.' %>
+            </p>
+            
+            <a href="/perfil/editar" class="edit-btn text-decoration-none d-inline-block text-center mb-4">
+                <i class="fas fa-edit me-1"></i> 
+                Editar Perfil
+            </a>
+
+            <div class="profile-stats-container d-flex gap-4 mb-5">
+                <div class="stat-box">
+                    <div class="stat-value"><%= reviewCount %></div>
+                    <div class="stat-label">Reviews</div>
+                </div>
+                
+                <div class="stat-box">
+                    <div class="stat-value"><%= user.jogosFavoritos.length %></div>
+                    <div class="stat-label">Jogos Favoritos</div>
+                </div>
+      
+                <div class="stat-box">
+                    <div class="stat-value text-warning"><%= avgRating %></div>
+                    <div class="stat-label">Média de Nota</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="max-width: 1200px;">
+    <h3 class="favorites-title mt-5">Jogos Favoritos (<%= user.jogosFavoritos.length %>)</h3>
+    
+    <div class="game-grid">
+        <% user.jogosFavoritos.forEach(jogo => { %>
+            <a href="/jogo/<%= jogo.slug %>" class="game-item text-decoration-none text-light" style="cursor: pointer;">
+                <img src="<%= jogo.img %>" alt="<%= jogo.titulo %>">
+                <p><%= jogo.titulo %></p>
+            </a>
+        <% }); %>
+
+        <% if (user.jogosFavoritos.length === 0) { %>
+            <div class="text-secondary mt-3">
+                <p>Nenhum jogo favorito adicionado.</p>
+                <a href="/explorar" class="btn btn-outline-primary btn-sm">Explorar Jogos</a>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<footer class="mt-5 py-3">
+    <p class="small text-secondary m-0 text-center">© 2025 64bitd. Todos os direitos reservados.</p>
+</footer>
+
+<%- include('_footer') %>

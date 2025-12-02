@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>64bitd - Cadastro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background-color: var(--darker-bg);">
+    <div class="login-card p-5 rounded-lg shadow-lg">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="/" class="btn btn-link text-white close-btn p-0" aria-label="Fechar">
+                <i class="fas fa-times fs-4"></i>
+            </a>
+
+            <div class="d-flex align-items-center">
+                <span class="fs-4 fw-bold text-white text-64bitd-logo me-2">64bitd</span>
+            </div>
+            <div style="width: 30px;"></div> 
+        </div>
+        
+        <h2 class="text-white mb-4 text-center">Crie sua conta</h2>
+
+        <form action="/cadastro" method="POST">
+            <div class="mb-3">
+                <label for="nome" class="form-label text-light-gray small mb-1">Nome Completo</label>
+                <input type="text" name="nome" class="form-control form-control-dark" id="nome" placeholder="Seu nome" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="usuario" class="form-label text-light-gray small mb-1">Nome de Usuário</label>
+                <input type="text" name="usuario" class="form-control form-control-dark" id="usuario" placeholder="Seu nome de usuário único" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label 
+text-light-gray small mb-1">E-mail</label>
+                <input type="email" name="email" class="form-control form-control-dark" id="email" placeholder="Seu e-mail válido" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="senha" class="form-label text-light-gray small mb-1">Senha</label>
+                <input type="password" name="senha" class="form-control form-control-dark" id="senha" placeholder="Sua senha segura" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="dataNasc" class="form-label text-light-gray small mb-1">Data de Nascimento</label>
+                <input type="date" 
+                       name="dataNasc" 
+                       class="form-control form-control-dark" 
+                       id="dataNasc" 
+                       required
+                       max="<%= new Date().toISOString().split('T')[0] %>" 
+                       min="1900-01-01">
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 fw-bold mb-3">Cadastrar</button>
+
+        </form>
+
+        <hr class="divider-line my-4">
+
+        <div class="text-center">
+            <span class="text-light-gray me-2">Já tem uma conta?</span>
+            <a href="/login" class="text-primary-link fw-bold text-decoration-none">Entrar na conta</a>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/script.js"></script>
+</body>
+</html>

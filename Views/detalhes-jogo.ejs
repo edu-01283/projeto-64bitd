@@ -1,0 +1,194 @@
+<% 
+    // --- LÓGICA DE PREPARAÇÃO---
+    
+    // Define a imagem do banner (Tenta banner -> capa -> placeholder)
+    let bannerUrl = jogo.bannerImg || jogo.coverArt || '/img/placeholder.jpg';
+    
+    // Define a posição do banner
+    let bannerPosition = jogo.bannerPos || 'center';
+    
+    // Define o título (Estilizado ou Texto puro)
+    let displayTitle = jogo.tituloEstilizado || jogo.titulo || 'Jogo Desconhecido';
+    
+    // Define a capa pequena
+    let coverUrl = jogo.coverArt || '/img/placeholder.jpg';
+    
+    // Define a data e desenvolvedora
+    let releaseDate = jogo.releaseDate || 'Data desconhecida';
+    let devName = jogo.developer || 'Desconhecido';
+    
+    // Define ID para links (suporta id do banco ou id estático)
+    let gameId = jogo.id || jogo.ID;
+    
+    // Tratamento de estatísticas para evitar erro se 'stats' não existir
+    let statLists = (jogo.stats && jogo.stats.lists) ? jogo.stats.lists : '--';
+    let statLikes = (jogo.stats && jogo.stats.likes) ? jogo.stats.likes : '--';
+    
+    // Tratamento de reviews
+    let reviewCount = (typeof reviews !== 'undefined' && reviews) ? reviews.length : 0;
+%>
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>64bitd - <%= jogo.titulo %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .game-banner {
+            width: 100%;
+            height: 350px;
+            background-size: cover;
+            /* Máscara para suavizar o final da imagem */
+            mask-image: linear-gradient(to bottom, black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+            opacity: 0.6;
+            margin-bottom: -100px;
+            background-color: #111;
+        }
+    </style>
+</head>
+<body class="game-page-body">
+
+    <button class="close-btn position-absolute top-0 end-0 m-4 text-white bg-transparent border-0 fs-2" onclick="window.history.back()" style="z-index: 10;">&times;</button>
+
+    <div class="game-banner" style="background-image: url('<%= bannerUrl %>'); background-position: <%= bannerPosition %>;"></div>
+
+    <div class="container" style="max-width: 1100px;">
+        <div class="row">
+            
+            <div class="col-md-3">
+                <img src="<%= coverUrl %>" alt="Capa" class="game-cover-art mb-3" onerror="this.src='/img/placeholder.jpg'">
+        
+                <div class="rating-box-large">
+                    <h4>Média</h4>
+                    <div class="rating-value-big"><%= media || '--' %></div>
+                    
+                    <div class="rating-stars-yellow mt-2">
+                        <% if (media && media !== '--' && media !== 'Em breve' && media !== 'TBA' && media !== '2025') { 
+                            const roundedMedia = Math.round(media);
+                            for(let i=1; i<=5; i++) { %>
+                                <i class="<%= i <= roundedMedia ? 'fas' : 'far' %> fa-star"></i>
+                            <% } 
+                        } else { %>
+                            <span class="text-secondary small">N/A</span>
+                        <% } %>
+                        <br>
+                        <span class="small text-secondary"><%= reviewCount %> avaliações</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9 ps-md-5 pt-4">
+                
+                <div class="game-title-header mb-2">
+                    <h1 class="display-4 text-uppercase fst-italic text-white mb-0">
+                        <%- displayTitle %>
+                    </h1>
+                </div>
+
+                <p class="game-metadata mb-4">
+                    released on <span class="text-white"><%= releaseDate %></span> 
+                    by <a href="#"><%= devName %></a>
+                </p>
+
+                <div class="d-flex gap-2 mb-4">
+                    <a href="/reviews/criar?jogoId=<%= gameId %>" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
+                        <i class="fas fa-pen me-2"></i>Deixar minha Review
+                    </a>
+
+                    <form action="/jogo/<%= jogo.slug %>/favoritar" method="POST" style="display:inline;">
+                        <% if (typeof isFavorito !== 'undefined' && isFavorito) { %>
+                            <button type="submit" class="btn btn-outline-danger fw-bold px-4 py-2 rounded-pill shadow">
+                                <i class="fas fa-heart me-2"></i> Favoritado
+                            </button>
+                        <% } else { %>
+                            <button type="submit" class="btn btn-outline-light fw-bold px-4 py-2 rounded-pill shadow">
+                                <i class="far fa-heart me-2"></i> Favoritar
+                            </button>
+                        <% } %>
+                    </form>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <p class="game-description-text">
+                           <%= jogo.descricao || 'Sem descrição disponível.' %>
+                        </p>
+                        
+                        <div class="d-flex mt-4">
+                            <div class="stat-badge"><%= statLists %> <br> <span class="small text-secondary">lists</span></div>
+                            <div class="stat-badge"><%= reviewCount %> <br> <span class="small text-secondary">reviews</span></div>
+                            <div class="stat-badge"><%= statLikes %> <br> <span class="small text-secondary">likes</span></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="platform-list">
+                            <h6>Released on</h6>
+                            <div class="d-flex flex-column text-secondary">
+                                <% if (jogo.platforms && Array.isArray(jogo.platforms)) { %>
+                                    <% jogo.platforms.forEach(plat => { %>
+                                        <span><%= plat %></span>
+                                    <% }) %>
+                                <% } else { %>
+                                    <span>PC</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-section-header mb-3 border-bottom border-secondary pb-2">
+                    <h4 class="text-secondary m-0">Reviews da Comunidade (<%= reviewCount %>)</h4>
+                </div>
+
+                <% if (reviewCount === 0) { %>
+                    <div class="text-center py-5 text-secondary">
+                        <i class="far fa-comment-dots fs-1 mb-3"></i>
+                        <p>Ainda não há reviews para este jogo.</p>
+                    </div>
+                <% } else { %>
+                    <% reviews.forEach(review => { %>
+                        <div class="review-card-simple d-flex align-items-start mb-3 p-3 rounded bg-dark border border-secondary">
+                            
+                            <img src="<%= (review.Usuario && review.Usuario.AvatarUrl) ? review.Usuario.AvatarUrl : '/img/user-avatar.jpg' %>" 
+                                 alt="Avatar" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/perfil/<%= review.UsuarioID %>" class="text-decoration-none text-white fw-bold">
+                                        <%= review.Usuario ? review.Usuario.Nome : 'Usuário' %>
+                                    </a>
+                                    <span class="small text-secondary">
+                                        <%= new Date(review.createdAt).toLocaleDateString('pt-BR') %>
+                                    </span>
+                                </div>
+                                <div class="text-warning small mb-2">
+                                    <% for(let i=1; i<=5; i++) { %> 
+                                        <i class="<%= i <= review.Avaliacao ? 'fas' : 'far' %> fa-star"></i> 
+                                    <% } %>
+                                </div>
+                                <p class="text-light m-0 text-break"><%= review.Corpo_do_comentario %></p>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } %>
+                </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="text-center py-4 mt-5 text-secondary small">
+            Mundo Jumbo é judicial e está em todo rodapé da página com link de ToS e outras bobagens
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

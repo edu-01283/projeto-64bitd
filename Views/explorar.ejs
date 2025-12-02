@@ -1,0 +1,61 @@
+<%- include('_header') %> 
+
+<form action="/explorar" method="GET" class="search-bar mb-4">
+    <div class="input-group">
+        <input type="text" 
+            name="busca"
+            class="form-control form-control-dark" 
+            placeholder="Buscar jogos..."
+            value="<%= typeof busca !== 'undefined' ? busca : '' %>"
+            style="max-width: 400px;">
+        <button class="btn btn-primary" type="submit">
+            <i class="fas fa-search"></i>
+        </button>
+        
+        <% if (typeof busca !== 'undefined' && busca) { %>
+            <a href="/explorar" class="btn btn-outline-secondary ms-2">Limpar</a>
+        <% } %>
+    </div>
+</form>
+
+<h3 class="text-white mb-4">
+    <% if (typeof busca !== 'undefined' && busca) { %>
+        Resultados para "<%= busca %>"
+    <% } else { %>
+        Jogos em Destaque
+    <% } %>
+</h3>
+
+<div class="game-list">
+    
+    <% if (jogos.length === 0) { %>
+        <div class="alert alert-dark text-center">Nenhum jogo encontrado.</div>
+    <% } %>
+
+    <% jogos.forEach(function(jogo) { %>
+        
+        <a href="<%= jogo.rota %>" class="game-link">
+            <div class="game-list-item d-flex align-items-center mb-3 p-3 rounded border border-secondary bg-dark">
+                <img src="<%= jogo.img %>" alt="Capa" class="game-list-thumb me-3">
+                <div class="game-info flex-grow-1">
+                    <h5 class="mb-1 text-light"><%= jogo.titulo %></h5>
+                    <p class="text-secondary small mb-0"><%= jogo.genero %></p>
+                    
+                    <% if (jogo.nota === 'Em breve' || jogo.nota.length > 3) { %>
+                        <div class="text-light small"><i class="far fa-clock"></i> <%= jogo.nota %></div>
+                    <% } else { %>
+                        <div class="text-warning small"><i class="fas fa-star"></i> <%= jogo.nota %></div>
+                    <% } %>
+                </div>
+                
+                <% if (jogo.badge) { %>
+                    <span class="badge <%= jogo.badgeClass %>"><%= jogo.badge %></span>
+                <% } %>
+            </div>
+        </a>
+
+    <% }); %>
+
+</div>
+
+<%- include('_footer') %>

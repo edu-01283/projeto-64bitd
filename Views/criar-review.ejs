@@ -1,0 +1,72 @@
+<%- include('partials/_header.ejs', { pageTitle: 'Criar Review', user: user }) %>
+
+    <style>
+        /* Estilos específicos do sistema de estrelas */
+        .star-rating { 
+            display: flex; 
+            flex-direction: row-reverse; 
+            justify-content: flex-start; 
+            gap: 10px; 
+        }
+        .star-rating input { display: none; }
+        .star-rating label { 
+            font-size: 2rem; 
+            color: #555; /* Cor cinza padrão */
+            cursor: pointer; 
+            transition: color 0.2s; 
+        }
+        /* Estilo para estrelas selecionadas e as anteriores */
+        .star-rating input:checked ~ label { color: #ffc107; } 
+        /* Estilo para hover (as estrelas ficam amarelas ao passar o mouse) */
+        .star-rating label:hover, 
+        .star-rating label:hover ~ label { color: #ffc107; }
+    </style>
+
+    <h2 class="text-white mb-4">Publicar Novo Review</h2>
+
+    <div class="card bg-dark border-secondary p-4">
+        
+        <% if (erro) { %>
+            <div class="alert alert-danger text-center p-2 mb-3">
+                Erro ao salvar o review. Verifique os dados.
+            </div>
+        <% } %>
+
+        <form action="/reviews/criar" method="POST">
+            
+            <div class="mb-3">
+                <label for="jogoId" class="form-label text-light-gray small mb-1">Selecione o Jogo</label>
+                <select name="jogoId" id="jogoId" class="form-select form-control-dark" required>
+                    <option value="">-- Selecione um Jogo --</option>
+                    <% jogos.forEach(jogo => { %>
+                        <option value="<%= jogo.ID %>" <%= jogo.ID == selectedId ? 'selected' : '' %>>
+                            <%= jogo.Nome %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label text-light-gray small mb-2 d-block">Sua Nota</label>
+                <div class="star-rating">
+                    <input type="radio" name="nota" id="star5" value="5" required><label for="star5"><i class="fas fa-star"></i></label>
+                    <input type="radio" name="nota" id="star4" value="4"><label for="star4"><i class="fas fa-star"></i></label>
+                    <input type="radio" name="nota" id="star3" value="3"><label for="star3"><i class="fas fa-star"></i></label>
+                    <input type="radio" name="nota" id="star2" value="2"><label for="star2"><i class="fas fa-star"></i></label>
+                    <input type="radio" name="nota" id="star1" value="1"><label for="star1"><i class="fas fa-star"></i></label>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="comentario" class="form-label text-light-gray small mb-1">Análise Detalhada</label>
+                <textarea name="comentario" id="comentario" class="form-control form-control-dark" rows="6" maxlength="2000" required></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="/reviews" class="btn btn-outline-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary fw-bold px-4">Publicar Review</button>
+            </div>
+        </form>
+    </div>
+
+<%- include('partials/_footer.ejs') %>

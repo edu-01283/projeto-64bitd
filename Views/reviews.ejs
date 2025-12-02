@@ -1,0 +1,80 @@
+<%- include('_header') %> 
+
+<style>
+    /* ATENÇÃO: As regras de body e main-content podem ser redundantes se já estiverem em style.css */
+    body { background-color: #11151a; } 
+    .main-content { padding: 40px; }
+    @media (min-width: 768px) { .main-content { margin-left: 250px; } }
+
+    .review-game-thumb {
+        width: 80px; 
+        height: 110px; 
+        object-fit: cover; 
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+</style>
+<h2 class="text-white fw-bold mb-4">Meus Reviews</h2>
+    
+    <div class="mb-4">
+        <a href="/reviews/criar" class="btn btn-primary fw-bold"><i class="fas fa-plus me-2"></i> Criar Novo Review</a>
+    </div>
+
+    <div class="review-list-container" style="max-width: 800px;">
+        <% if (reviews.length === 0) { %>
+            <div class="alert alert-info text-center bg-dark border-secondary text-light-gray mt-5">
+                Você ainda não publicou nenhuma review. Comece a avaliar seus jogos!
+            </div>
+        <% } else { %>
+            
+            <% reviews.forEach(review => { %>
+                <div class="review-card mb-4 p-4 border rounded bg-dark border-secondary">
+                    
+                    <div class="d-flex align-items-start">
+                        <img src="<%= review.Jogo ? review.Jogo.img : '/img/placeholder.jpg' %>" 
+                                alt="<%= review.Jogo ? review.Jogo.Nome : 'Jogo não encontrado' %>" 
+                                class="review-game-thumb me-4">
+
+                        <div class="review-info flex-grow-1">
+                            <h5 class="mb-1">
+                                <a href="/jogo/<%= review.Jogo ? review.Jogo.slug : '#' %>" class="text-white text-decoration-none fw-bold hover-primary">
+                                    <%= review.Jogo ? review.Jogo.Nome : 'Jogo não encontrado' %>
+                                </a>
+                            </h5>
+                            
+                            <div class="text-warning small mb-2">
+                                <% for(let i=1; i<=5; i++) { %>
+                                    <i class="<%= i <= review.Avaliacao ? 'fas' : 'far' %> fa-star"></i>
+                                <% } %>
+                                <span class="ms-2 text-secondary fw-bold">(<%= review.Avaliacao %>.0)</span>
+                            </div>
+                            
+                            <p class="text-secondary small mb-0">
+                                <i class="far fa-calendar-alt me-1"></i>
+                                Publicado em <%= new Date(review.createdAt).toLocaleDateString('pt-BR') %>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <hr class="border-secondary my-3">
+                    <p class="text-light text-break fst-italic mb-3" style="white-space: pre-line;">"<%= review.Corpo_do_comentario %>"</p>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="/reviews/editar/<%= review.ID %>" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-edit me-1"></i> Editar
+                        </a>
+
+                        <form action="/reviews/deletar/<%= review.ID %>" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta review?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Excluir
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            <% }); %>
+
+        <% } %>
+    </div>
+
+<%- include('_footer') %>
