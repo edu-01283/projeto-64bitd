@@ -1,4 +1,4 @@
-// server.js - Versão FINAL (Corrigida e Limpa)
+// server.js
 
 require('dotenv').config(); 
 
@@ -7,7 +7,7 @@ const session = require('express-session');
 const path = require('path');
 const multer = require('multer'); 
 const { Op } = require('sequelize'); 
-const bcrypt = require('bcrypt'); // Importa o bcrypt para criptografia
+const bcrypt = require('bcrypt'); 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -29,10 +29,9 @@ const {
 // ====================================================
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/img/uploads/') // Pasta onde salvar
+        cb(null, 'public/img/uploads/') 
     },
     filename: function (req, file, cb) {
-        // Nome único: id_usuario + timestamp + extensão
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, req.session.userId + '-' + uniqueSuffix + path.extname(file.originalname));
     }
@@ -58,7 +57,7 @@ app.use(session({
 }));
 
 // ====================================================
-// 4. DADOS ESTÁTICOS DE JOGOS
+// 4. DADOS ESTÁTICOS DE JOGOS (SEMENTE PARA O BANCO)
 // ====================================================
 const jogosDB = [
     { 
@@ -178,7 +177,7 @@ const jogosDB = [
         tituloEstilizado: 'Clair Obscur: <span class="fw-light text-warning">Expedition 33</span>',
         rota: '/jogo/expedition',
         genero: 'RPG • Sandfall', 
-        nota: '2025', badge: null,
+        nota: '5.0', badge: null,
         bannerImg: '/img/expedition-33.jpg',
         bannerPos: 'center top',
         coverArt: '/img/expedition-33.jpg',
@@ -218,6 +217,7 @@ const requireLogin = async (req, res, next) => {
     }
 
     try {
+        // Busca usuário e perfil
         const user = await User.findByPk(req.session.userId, {
             include: [{ model: Profile, as: 'Perfil' }]
         });
@@ -228,12 +228,14 @@ const requireLogin = async (req, res, next) => {
             });
         }
 
-        // req.user: Sequelize Model (keys Nome, Email) - Usado para lógica de banco
+        // Atualiza o objeto user na requisição
         req.user = user;
-        // Adiciona a Bio no modelo (minúsculo) para fácil acesso
-        req.user.bio = user.Perfil ? user.Perfil.Bio : ''; 
-        
-        // req.session.user: Objeto Simples (keys nome, email) - Usado para a sessão e sidebar
+        // Garante que temos um objeto plain para views
+        req.userPlain = user.get({ plain: true });
+        // Adiciona campo bio facilitado
+        req.userPlain.bio = (user.Perfil && user.Perfil.Bio) ? user.Perfil.Bio : '';
+
+        // Atualiza dados da sessão para consistência
         req.session.user = { 
             ID: user.ID, 
             nome: user.Nome, 
@@ -256,7 +258,6 @@ const requireLogin = async (req, res, next) => {
 app.get('/', (req, res) => { res.render('index', { user: req.session.user }); });
 app.get('/login', (req, res) => { res.render('login', { erro: req.query.erro, sucesso: req.query.sucesso }); });
 
-// 🚨 LOGIN: CORRIGIDO COM MIGRAÇÃO DE SENHA
 app.post('/login', async (req, res) => {
     const { usuario, senha } = req.body;
     try {
@@ -264,29 +265,18 @@ app.post('/login', async (req, res) => {
         
         if (!user) return res.render('login', { erro: "Usuário ou senha incorretos!", sucesso: null });
         
-        // --- LÓGICA DE VERIFICAÇÃO E MIGRAÇÃO ---
-        
-        // Um hash BCrypt tem 60 caracteres (baseado no User.js: STRING(60))
         const isHashed = user.Senha.length === 60 && user.Senha.startsWith('$2'); 
-        
         let passwordIsValid = false;
 
         if (isHashed) {
-            // Cenário 1: Senha já está criptografada (Contas Novas ou Migradas)
             passwordIsValid = await bcrypt.compare(senha, user.Senha);
         } else {
-            // Cenário 2: Senha está em texto puro (Contas Antigas)
-            // Tenta logar com o texto puro
             if (user.Senha === senha) {
                 passwordIsValid = true;
-                
-                // 🚨 MIGRAÇÃO: Criptografa a senha antiga e salva no DB
                 const newHash = await bcrypt.hash(senha, 10);
                 await User.update({ Senha: newHash }, { where: { ID: user.ID } });
-                console.log(`[Segurança] Senha do usuário ${user.Login} migrada com sucesso.`);
             }
         }
-        // --- FIM DA LÓGICA DE VERIFICAÇÃO ---
 
         if (!passwordIsValid) return res.render('login', { erro: "Usuário ou senha incorretos!", sucesso: null });
         
@@ -300,18 +290,16 @@ app.post('/login', async (req, res) => {
 
 app.get('/cadastro', (req, res) => { res.render('cadastro', { erro: null }); });
 
-// 🚨 CADASTRO: CRIPTOGRAFIA DE SENHA COM BCrypt
 app.post('/cadastro', async (req, res) => {
     const { nome, usuario, email, senha, dataNasc } = req.body;
     try {
-        // Gera o hash da senha (10 é o número de rounds de salt)
         const hashedPassword = await bcrypt.hash(senha, 10);
 
         const newUser = await User.create({ 
             Nome: nome, 
             Login: usuario, 
             Email: email, 
-            Senha: hashedPassword, // Salva o hash criptografado
+            Senha: hashedPassword,
             DataNascimento: dataNasc,
             AvatarUrl: '/img/user-avatar.jpg' 
         });
@@ -337,7 +325,6 @@ app.get('/dashboard', requireLogin, (req, res) => {
     res.render('dashboard', { user: req.session.user, destaques: destaques, populares: populares, novos: novos });
 });
 
-// Explorar (Média Real)
 app.get('/explorar', requireLogin, async (req, res) => {
     const termo = req.query.busca ? req.query.busca.toLowerCase() : '';
     
@@ -372,7 +359,6 @@ app.get('/explorar', requireLogin, async (req, res) => {
     }
 });
 
-// Perfil (Com Estatísticas)
 app.get('/perfil', requireLogin, async (req, res) => {
     try {
         const userWithDetails = await User.findByPk(req.session.userId, {
@@ -384,7 +370,7 @@ app.get('/perfil', requireLogin, async (req, res) => {
         });
         
         const favoritosComDetalhes = userWithDetails.JogosFavoritos
-            .map(favGame => jogosDB.find(j => j.id === favGame.ID)).filter(j => j);
+            .map(favGame => jogosDB.find(j => j.slug === favGame.slug)).filter(j => j);
             
         const reviews = userWithDetails.Avaliacoes || [];
         const reviewCount = reviews.length;
@@ -413,27 +399,29 @@ app.get('/perfil', requireLogin, async (req, res) => {
 
 // Edição de Perfil (GET)
 app.get('/perfil/editar', requireLogin, async (req, res) => {
-    const error = req.query.erro ? req.query.erro.replace(/-/g, ' ') : null;
-    
-    // Cria um objeto simples para EJS com as propriedades em minúsculo
-    const userForEjs = {
-        nome: req.user.Nome,
-        email: req.user.Email,
-        bio: req.user.bio, 
-        avatar: req.user.AvatarUrl || req.session.user.avatar
-    };
+    try {
+        const error = req.query.erro ? req.query.erro.replace(/-/g, ' ') : null;
+        
+        // Usa o objeto plain criado no middleware requireLogin
+        const userForEjs = {
+            nome: req.userPlain.Nome,
+            email: req.userPlain.Email,
+            bio: req.userPlain.bio || '', // Garante string vazia se null
+            avatar: req.userPlain.AvatarUrl
+        };
 
-    res.render('editar-perfil', { user: userForEjs, error: error });
+        res.render('editar-perfil', { user: userForEjs, error: error });
+    } catch (error) {
+        console.error("Erro na rota de editar perfil:", error);
+        res.redirect('/perfil');
+    }
 });
 
-// Salvar Perfil (POST) - Com Multer e correção de E-mail
 app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, res) => {
     const { nome, email, bio } = req.body;
-    const currentUser = req.user; // Sequelize User instance
+    const currentUser = req.user; 
 
-    // Função auxiliar para re-renderizar o form com os dados submetidos e a mensagem de erro
     const renderError = (msg) => {
-        // Usa os dados submetidos para preencher o formulário novamente
         const userSubmitted = {
             nome: nome,
             email: email,
@@ -446,34 +434,32 @@ app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, re
     try {
         let updateData = { Nome: nome };
         
-        // 1. Lógica de Upload de Foto
         if (req.file) {
             updateData.AvatarUrl = `/img/uploads/${req.file.filename}`;
         }
 
-        // 2. Lógica de E-mail
         if (!email || email.trim() === '') {
             return renderError("O campo E-mail não pode ficar vazio.");
         }
 
-        // Se o e-mail for diferente do atual, verifica unicidade
         if (email !== currentUser.Email) {
             const emailExists = await User.findOne({ where: { Email: email } });
-            
-            // Verifica se o e-mail existe E se o ID do e-mail encontrado é diferente do ID do usuário atual.
             if (emailExists && emailExists.ID !== currentUser.ID) { 
                 return renderError("Este e-mail já está em uso por outro usuário.");
             }
             updateData.Email = email;
         }
 
-        // 3. Atualiza o Usuário (Nome, Foto e talvez E-mail)
         await User.update(updateData, { where: { ID: req.session.userId } });
         
-        // 4. Atualiza o Perfil (Bio)
-        await Profile.upsert({ UsuarioID: req.session.userId, Bio: bio });
+        // Atualiza ou Cria o Perfil (Garante que não falhe se não existir)
+        const profile = await Profile.findOne({ where: { UsuarioID: req.session.userId } });
+        if (profile) {
+            await profile.update({ Bio: bio });
+        } else {
+            await Profile.create({ UsuarioID: req.session.userId, Bio: bio });
+        }
         
-        // 5. Atualiza a Sessão
         req.session.user.nome = nome;
         if (updateData.Email) req.session.user.email = updateData.Email;
         if (updateData.AvatarUrl) req.session.user.avatar = updateData.AvatarUrl; 
@@ -486,7 +472,6 @@ app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, re
     }
 });
 
-// Perfil Público
 app.get('/perfil/:userId', requireLogin, async (req, res) => {
     const targetUserId = req.params.userId;
     try {
@@ -499,7 +484,7 @@ app.get('/perfil/:userId', requireLogin, async (req, res) => {
         }
 
         const favoritosComDetalhes = userWithDetails.JogosFavoritos
-            .map(favGame => jogosDB.find(j => j.id === favGame.ID))
+            .map(favGame => jogosDB.find(j => j.slug === favGame.slug))
             .filter(j => j);
             
         const userEJS = { 
@@ -519,7 +504,6 @@ app.get('/perfil/:userId', requireLogin, async (req, res) => {
     }
 });
 
-// Rota de Detalhes do Jogo
 app.get('/jogo/:id', requireLogin, async (req, res) => {
     const slug = req.params.id;
     
@@ -549,7 +533,7 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
                 bannerImg: jogoDBPlain.bannerImg || jogoEstatico.bannerImg,
                 titulo: jogoEstatico.titulo, 
                 slug: jogoEstatico.slug,
-                id: jogoDB ? jogoDB.ID : jogoEstatico.id
+                id: jogoDB ? jogoDB.ID : jogoEstatico.id // Prioriza ID do banco
             };
             
             let isFavorito = false;
@@ -581,13 +565,30 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Ação de Favoritar
+// Favoritar (Sincroniza DB se necessário)
 app.post('/jogo/:slug/favoritar', requireLogin, async (req, res) => {
     const { slug } = req.params;
 
     try {
-        const jogo = await Game.findOne({ where: { slug: slug } });
-        if (!jogo) return res.status(404).send("Jogo não encontrado no banco.");
+        // 1. Tenta achar o jogo no banco
+        let jogo = await Game.findOne({ where: { slug: slug } });
+        
+        // 2. Se não achar, busca na lista estática e cria no banco
+        if (!jogo) {
+            const jogoEstatico = jogosDB.find(j => j.slug === slug);
+            if (jogoEstatico) {
+                jogo = await Game.create({
+                    slug: jogoEstatico.slug,
+                    Nome: jogoEstatico.titulo, // Adaptando campos
+                    coverArt: jogoEstatico.coverArt,
+                    bannerImg: jogoEstatico.bannerImg,
+                    descricao: jogoEstatico.descricao
+                });
+                console.log(`Jogo ${slug} criado automaticamente no DB.`);
+            } else {
+                return res.status(404).send("Jogo não encontrado.");
+            }
+        }
 
         const favoritoExistente = await UserGame.findOne({
             where: { fk_Usuarios_ID: req.session.userId, fk_Jogos_ID: jogo.ID }
@@ -610,7 +611,6 @@ app.post('/jogo/:slug/favoritar', requireLogin, async (req, res) => {
     }
 });
 
-// Listar Reviews
 app.get('/reviews', requireLogin, async (req, res) => {
     try {
         const minhasReviews = await Review.findAll({
@@ -621,9 +621,9 @@ app.get('/reviews', requireLogin, async (req, res) => {
         
         const reviewsComImagens = minhasReviews.map(review => {
             const reviewPlain = review.get({ plain: true }); 
-            const jogoEstatico = jogosDB.find(j => j.id === reviewPlain.Jogo.ID);
+            const jogoEstatico = jogosDB.find(j => j.slug === reviewPlain.Jogo.slug); // Link pelo slug
             
-            if (jogoEstatico && reviewPlain.Jogo) {
+            if (jogoEstatico) {
                 reviewPlain.Jogo.img = jogoEstatico.img; 
             } else {
                 reviewPlain.Jogo.img = '/img/placeholder.jpg'; 
@@ -638,7 +638,6 @@ app.get('/reviews', requireLogin, async (req, res) => {
     }
 });
 
-// Deletar Review
 app.post('/reviews/deletar/:id', requireLogin, async (req, res) => {
     try {
         const reviewId = req.params.id;
@@ -651,7 +650,6 @@ app.post('/reviews/deletar/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Editar Review (GET)
 app.get('/reviews/editar/:id', requireLogin, async (req, res) => {
     try {
         const reviewId = req.params.id;
@@ -667,7 +665,6 @@ app.get('/reviews/editar/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Editar Review (POST)
 app.post('/reviews/editar/:id', requireLogin, async (req, res) => {
     try {
         const reviewId = req.params.id;
@@ -680,10 +677,15 @@ app.post('/reviews/editar/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Criar Review (GET)
+// Criar Review - Carrega jogos do banco (agora populado)
 app.get('/reviews/criar', requireLogin, async (req, res) => {
     try {
-        const jogos = await Game.findAll({ attributes: ['ID', 'Nome'], order: [['Nome', 'ASC']] });
+        // Busca todos os jogos no DB. Como temos o sync, a lista não estará vazia.
+        const jogos = await Game.findAll({ 
+            attributes: ['ID', 'Nome'], 
+            order: [['Nome', 'ASC']] 
+        });
+        
         const selectedId = req.query.jogoId || null;
         
         res.render('criar-review', { 
@@ -699,7 +701,6 @@ app.get('/reviews/criar', requireLogin, async (req, res) => {
     }
 });
 
-// Criar Review (POST)
 app.post('/reviews/criar', requireLogin, async (req, res) => {
     const { jogoId, nota, comentario } = req.body;
     try {
@@ -710,10 +711,41 @@ app.post('/reviews/criar', requireLogin, async (req, res) => {
             Corpo_do_comentario: comentario
         });
         res.redirect('/reviews');
-    } catch (error) { res.redirect('/reviews/criar?erro=true'); }
+    } catch (error) { 
+        console.error("Erro ao criar review:", error);
+        res.redirect('/reviews/criar?erro=true'); 
+    }
 });
 
 app.get('/esqueci-senha', (req, res) => { res.render('esqueci-senha'); });
+
+// ====================================================
+// 8. FUNÇÃO DE SINCRONIZAÇÃO (AUTO-SEED)
+// ====================================================
+async function syncJogos() {
+    console.log("🔄 Iniciando sincronização de jogos...");
+    for (const jogoEstatico of jogosDB) {
+        try {
+            const [jogo, created] = await Game.findOrCreate({
+                where: { slug: jogoEstatico.slug },
+                defaults: {
+                    Nome: jogoEstatico.titulo,
+                    coverArt: jogoEstatico.coverArt,
+                    bannerImg: jogoEstatico.bannerImg,
+                    descricao: jogoEstatico.descricao,
+                    // Adaptação dos campos conforme seu model Game.js
+                    Desenvolvedora: jogoEstatico.developer,
+                    Ano_de_Lancamento: jogoEstatico.releaseDate ? new Date(jogoEstatico.releaseDate) : null,
+                    Genero: jogoEstatico.genero
+                }
+            });
+            if (created) console.log(`Jogo inserido: ${jogo.Nome}`);
+        } catch (error) {
+            console.error(`Erro ao sincronizar jogo ${jogoEstatico.titulo}:`, error.message);
+        }
+    }
+    console.log("🏁 Sincronização concluída.");
+}
 
 // ====================================================
 // 9. INICIAR SERVIDOR
@@ -722,12 +754,16 @@ async function initializeApp() {
     try {
         await testConnection();
         await sequelize.sync({ alter: true });
-        console.log('✅ Banco de dados sincronizado.');
+        console.log('Banco de dados sincronizado.');
+        
+        // Executa a seed automática
+        await syncJogos();
+
         app.listen(PORT, () => {
-            console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+            console.log(`Servidor rodando em http://localhost:${PORT}`);
         });
     } catch (error) {
-        console.error('❌ Erro crítico:', error);
+        console.error('Erro crítico:', error);
     }
 }
 
