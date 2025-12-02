@@ -209,7 +209,7 @@ const jogosDB = [
 ];
 
 // ====================================================
-// 5. MIDDLEWARE
+// 5. MIDDLEWARE DE PROTEÇÃO E SESSÃO
 // ====================================================
 const requireLogin = async (req, res, next) => {
     if (!req.session.userId) {
@@ -217,10 +217,8 @@ const requireLogin = async (req, res, next) => {
     }
 
     try {
-        // Busca usuário e perfil
-        const user = await User.findByPk(req.session.userId, {
-            include: [{ model: Profile, as: 'Perfil' }]
-        });
+        // Busca apenas o usuário básico para validar
+        const user = await User.findByPk(req.session.userId);
 
         if (!user) {
             return req.session.destroy(() => {
@@ -228,26 +226,22 @@ const requireLogin = async (req, res, next) => {
             });
         }
 
-        // Atualiza o objeto user na requisição
-        req.user = user;
-        // Garante que temos um objeto plain para views
-        req.userPlain = user.get({ plain: true });
-        // Adiciona campo bio facilitado
-        req.userPlain.bio = (user.Perfil && user.Perfil.Bio) ? user.Perfil.Bio : '';
-
-        // Atualiza dados da sessão para consistência
-        req.session.user = { 
-            ID: user.ID, 
-            nome: user.Nome, 
-            usuario: user.Login, 
-            email: user.Email, 
-            avatar: user.AvatarUrl 
-        };
-
+        req.user = user; // Salva o objeto Sequelize na requisição
+        
+        // Atualiza sessão se necessário
+        if (!req.session.user) {
+            req.session.user = { 
+                ID: user.ID, 
+                nome: user.Nome, 
+                usuario: user.Login, 
+                email: user.Email, 
+                avatar: user.AvatarUrl 
+            };
+        }
         next();
     } catch (error) {
-        console.error("Erro ao carregar usuário no requireLogin:", error);
-        res.status(500).send("Erro interno ao validar sessão.");
+        console.error("Erro no middleware requireLogin:", error);
+        res.status(500).send("Erro interno de autenticação.");
     }
 };
 
@@ -281,10 +275,19 @@ app.post('/login', async (req, res) => {
         if (!passwordIsValid) return res.render('login', { erro: "Usuário ou senha incorretos!", sucesso: null });
         
         req.session.userId = user.ID;
+        // Atualiza a sessão com dados frescos
+        req.session.user = { 
+            ID: user.ID, 
+            nome: user.Nome, 
+            usuario: user.Login, 
+            email: user.Email, 
+            avatar: user.AvatarUrl 
+        };
+        
         res.redirect('/dashboard');
     } catch (error) { 
         console.error("Erro no login:", error);
-        res.render('login', { erro: "Ocorreu um erro interno. Tente novamente.", sucesso: null }); 
+        res.render('login', { erro: "Ocorreu um erro interno.", sucesso: null }); 
     }
 });
 
@@ -397,17 +400,20 @@ app.get('/perfil', requireLogin, async (req, res) => {
     }
 });
 
-// Edição de Perfil (GET)
 app.get('/perfil/editar', requireLogin, async (req, res) => {
     try {
         const error = req.query.erro ? req.query.erro.replace(/-/g, ' ') : null;
         
-        // Usa o objeto plain criado no middleware requireLogin
+        // Buscamos explicitamente os dados para garantir que nada venha indefinido
+        const currentUser = await User.findByPk(req.session.userId, {
+            include: [{ model: Profile, as: 'Perfil' }]
+        });
+
         const userForEjs = {
-            nome: req.userPlain.Nome,
-            email: req.userPlain.Email,
-            bio: req.userPlain.bio || '', // Garante string vazia se null
-            avatar: req.userPlain.AvatarUrl
+            nome: currentUser.Nome,
+            email: currentUser.Email,
+            bio: currentUser.Perfil ? currentUser.Perfil.Bio : '',
+            avatar: currentUser.AvatarUrl
         };
 
         res.render('editar-perfil', { user: userForEjs, error: error });
@@ -419,19 +425,9 @@ app.get('/perfil/editar', requireLogin, async (req, res) => {
 
 app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, res) => {
     const { nome, email, bio } = req.body;
-    const currentUser = req.user; 
-
-    const renderError = (msg) => {
-        const userSubmitted = {
-            nome: nome,
-            email: email,
-            bio: bio,
-            avatar: req.session.user.avatar || currentUser.AvatarUrl
-        };
-        return res.render('editar-perfil', { user: userSubmitted, error: msg });
-    };
-
+    
     try {
+        const currentUser = await User.findByPk(req.session.userId);
         let updateData = { Nome: nome };
         
         if (req.file) {
@@ -439,20 +435,22 @@ app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, re
         }
 
         if (!email || email.trim() === '') {
-            return renderError("O campo E-mail não pode ficar vazio.");
+             // Se der erro, renderiza a página novamente com os dados enviados
+             const userSubmitted = { nome, email, bio, avatar: currentUser.AvatarUrl };
+             return res.render('editar-perfil', { user: userSubmitted, error: "O campo E-mail não pode ficar vazio." });
         }
 
         if (email !== currentUser.Email) {
             const emailExists = await User.findOne({ where: { Email: email } });
             if (emailExists && emailExists.ID !== currentUser.ID) { 
-                return renderError("Este e-mail já está em uso por outro usuário.");
+                const userSubmitted = { nome, email, bio, avatar: currentUser.AvatarUrl };
+                return res.render('editar-perfil', { user: userSubmitted, error: "Este e-mail já está em uso." });
             }
             updateData.Email = email;
         }
 
         await User.update(updateData, { where: { ID: req.session.userId } });
         
-        // Atualiza ou Cria o Perfil (Garante que não falhe se não existir)
         const profile = await Profile.findOne({ where: { UsuarioID: req.session.userId } });
         if (profile) {
             await profile.update({ Bio: bio });
@@ -460,6 +458,7 @@ app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, re
             await Profile.create({ UsuarioID: req.session.userId, Bio: bio });
         }
         
+        // Atualiza sessão
         req.session.user.nome = nome;
         if (updateData.Email) req.session.user.email = updateData.Email;
         if (updateData.AvatarUrl) req.session.user.avatar = updateData.AvatarUrl; 
@@ -468,7 +467,7 @@ app.post('/perfil/editar', requireLogin, upload.single('avatar'), async (req, re
 
     } catch (error) { 
         console.error("Erro ao atualizar perfil:", error);
-        return renderError("Erro interno ao salvar dados.");
+        res.redirect('/perfil/editar?erro=Erro-interno-ao-salvar');
     }
 });
 
@@ -533,7 +532,7 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
                 bannerImg: jogoDBPlain.bannerImg || jogoEstatico.bannerImg,
                 titulo: jogoEstatico.titulo, 
                 slug: jogoEstatico.slug,
-                id: jogoDB ? jogoDB.ID : jogoEstatico.id // Prioriza ID do banco
+                id: jogoDB ? jogoDB.ID : jogoEstatico.id 
             };
             
             let isFavorito = false;
@@ -565,7 +564,7 @@ app.get('/jogo/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Favoritar (Sincroniza DB se necessário)
+// Ação de Favoritar
 app.post('/jogo/:slug/favoritar', requireLogin, async (req, res) => {
     const { slug } = req.params;
 
@@ -573,18 +572,19 @@ app.post('/jogo/:slug/favoritar', requireLogin, async (req, res) => {
         // 1. Tenta achar o jogo no banco
         let jogo = await Game.findOne({ where: { slug: slug } });
         
-        // 2. Se não achar, busca na lista estática e cria no banco
+        // 2. Se não achar, busca na lista estática e cria no banco (Sync on Demand)
         if (!jogo) {
             const jogoEstatico = jogosDB.find(j => j.slug === slug);
             if (jogoEstatico) {
                 jogo = await Game.create({
                     slug: jogoEstatico.slug,
-                    Nome: jogoEstatico.titulo, // Adaptando campos
+                    Nome: jogoEstatico.titulo, 
                     coverArt: jogoEstatico.coverArt,
                     bannerImg: jogoEstatico.bannerImg,
-                    descricao: jogoEstatico.descricao
+                    descricao: jogoEstatico.descricao,
+                    Desenvolvedora: jogoEstatico.developer,
+                    Genero: jogoEstatico.genero
                 });
-                console.log(`Jogo ${slug} criado automaticamente no DB.`);
             } else {
                 return res.status(404).send("Jogo não encontrado.");
             }
@@ -621,7 +621,7 @@ app.get('/reviews', requireLogin, async (req, res) => {
         
         const reviewsComImagens = minhasReviews.map(review => {
             const reviewPlain = review.get({ plain: true }); 
-            const jogoEstatico = jogosDB.find(j => j.slug === reviewPlain.Jogo.slug); // Link pelo slug
+            const jogoEstatico = jogosDB.find(j => j.slug === reviewPlain.Jogo.slug);
             
             if (jogoEstatico) {
                 reviewPlain.Jogo.img = jogoEstatico.img; 
@@ -677,10 +677,8 @@ app.post('/reviews/editar/:id', requireLogin, async (req, res) => {
     }
 });
 
-// Criar Review - Carrega jogos do banco (agora populado)
 app.get('/reviews/criar', requireLogin, async (req, res) => {
     try {
-        // Busca todos os jogos no DB. Como temos o sync, a lista não estará vazia.
         const jogos = await Game.findAll({ 
             attributes: ['ID', 'Nome'], 
             order: [['Nome', 'ASC']] 
@@ -733,7 +731,6 @@ async function syncJogos() {
                     coverArt: jogoEstatico.coverArt,
                     bannerImg: jogoEstatico.bannerImg,
                     descricao: jogoEstatico.descricao,
-                    // Adaptação dos campos conforme seu model Game.js
                     Desenvolvedora: jogoEstatico.developer,
                     Ano_de_Lancamento: jogoEstatico.releaseDate ? new Date(jogoEstatico.releaseDate) : null,
                     Genero: jogoEstatico.genero
@@ -756,7 +753,6 @@ async function initializeApp() {
         await sequelize.sync({ alter: true });
         console.log('Banco de dados sincronizado.');
         
-        // Executa a seed automática
         await syncJogos();
 
         app.listen(PORT, () => {
