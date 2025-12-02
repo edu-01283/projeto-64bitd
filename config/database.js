@@ -3,15 +3,15 @@
 const { Sequelize } = require('sequelize');
 
 // Variáveis de Ambiente
-const DATABASE_URL = process.env.DATABASE_URL; // Variável fornecida pelo Render (Produção)
-const DB_DIALECT_LOCAL = process.env.DB_DIALECT || 'mysql'; // Dialeto local (Desenvolvimento)
+const DATABASE_URL = process.env.DATABASE_URL; // Variável fornecida pelo Render
+const DB_DIALECT_LOCAL = process.env.DB_DIALECT || 'mysql'; // Dialeto local
 
 let sequelize;
 
 if (DATABASE_URL) {
     // ====================================================
     // AMBIENTE DE PRODUÇÃO (Render/PostgreSQL)
-    // Se a DATABASE_URL existir, usamos o PostgreSQL com SSL
+    // Se a DATABASE_URL existir (no Render), usamos o PostgreSQL com SSL
     // ====================================================
     console.log('Detectando ambiente de produção. Usando PostgreSQL.');
     
@@ -34,7 +34,7 @@ if (DATABASE_URL) {
 } else {
     // ====================================================
     // AMBIENTE LOCAL (MySQL/Desenvolvimento)
-    // Usa as variáveis padrão do .env (DB_HOST, DB_NAME, etc.)
+    // Se a DATABASE_URL não existir (localmente), usa as variáveis do .env
     // ====================================================
     console.log('Detectando ambiente local. Usando MySQL.');
 
@@ -63,7 +63,8 @@ async function testConnection() {
         console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
     } catch (error) {
         console.error('❌ ERRO ao conectar ao banco de dados:', error.message);
-        throw error;
+        // Lança o erro para que a aplicação não inicie com falha no DB
+        throw error; 
     }
 }
 
